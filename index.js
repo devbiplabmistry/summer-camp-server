@@ -45,6 +45,7 @@ async function run() {
     const danceCollection = client.db("summerSchool").collection("danceClasses");
     const instructorCollection = client.db("summerSchool").collection("instructor");
     const studentSelectedClassCollection = client.db("summerSchool").collection("selectedClass");
+    const addClassCollection = client.db("summerSchool").collection("addedClass");
 
     // jwt related api
     app.post('/jwt', (req, res) => {
@@ -88,8 +89,15 @@ async function run() {
       res.send(result)
     })
     // instructor related api
-    app.get('/instructor', async (req, res) => {
-      const result = await instructorCollection.find().toArray();
+    app.get('/instructor/addClass', async (req, res) => {
+      const email =req.query.email;
+      const query ={email:email}
+      const result = await addClassCollection.find(query).toArray();
+      res.send(result)
+    })
+    app.post('/instructor/addClass', async (req, res) => {
+      const classes =req.body;
+      const result = await addClassCollection .insertOne(classes);
       res.send(result)
     })
 
