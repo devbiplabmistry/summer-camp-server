@@ -9,10 +9,24 @@ const port = process.env.PORT || 5000
 app.use(cors())
 app.use(express.json())
 
-
+// jwt middleware
+const verifyJwt = (req, res, next) => {
+  const authorization = req.headers.authorization;
+  if (!authorization) {
+    return res.status(401).send({ error: true, message: 'unauthorize access' })
+  }
+  const token = authorization.split(' ')[1]
+  jwt.verify(token, process.env.USER_TOKEN, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ error: true, message: 'unauthorize access' })
+    }
+    decoded.req = decoded;
+    next()
+  })
+}
 
 // mongodb
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.USER_DB}:${process.env.USER_PASS}@cluster0.ovmmvr6.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -30,8 +44,7 @@ async function run() {
     await client.connect();
     const danceCollection = client.db("summerSchool").collection("danceClasses");
     const instructorCollection = client.db("summerSchool").collection("instructor");
-
-
+    const studentSelectedClassCollection = client.db("summerSchool").collection("selectedClass");
 
     // jwt related api
     app.post('/jwt', (req, res) => {
@@ -39,6 +52,7 @@ async function run() {
       const token = jwt.sign({
         user
       }, process.env.USER_TOKEN, { expiresIn: '1h' });
+      res.send({ token })
 
     })
     // dance class related api
@@ -46,7 +60,33 @@ async function run() {
       const result = await danceCollection.find().toArray();
       res.send(result)
     })
-
+    // selected class 
+    app.post('/selectedClasses/:id', async (req, res) => {
+      const id = req.params.id;
+      const selectedClass = req.body
+      const query = { selectedClassId: id }
+      const existing = await studentSelectedClassCollection.findOne(query)
+      console.log(existing);
+      if (existing) {
+        return res.status(403).send({ error: true, message: "You already Join" })
+      }
+      else {
+        const result = await studentSelectedClassCollection.insertOne(selectedClass);
+        res.send(selectedClass)
+      }
+    })
+    app.get('/selectedClasses', async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email }
+      const result = await studentSelectedClassCollection.find(query).toArray()
+      res.send(result)
+    })
+    app.delete('/selectedClasses/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id:new ObjectId(id) }
+      const result = await studentSelectedClassCollection.deleteOne(query)
+      res.send(result)
+    })
     // instructor related api
     app.get('/instructor', async (req, res) => {
       const result = await instructorCollection.find().toArray();
