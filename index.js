@@ -46,6 +46,7 @@ async function run() {
     const instructorCollection = client.db("summerSchool").collection("instructor");
     const studentSelectedClassCollection = client.db("summerSchool").collection("selectedClass");
     const addClassCollection = client.db("summerSchool").collection("addedClass");
+    const userCollection = client.db("summerSchool").collection("allUsers");
 
     // jwt related api
     app.post('/jwt', (req, res) => {
@@ -84,25 +85,70 @@ async function run() {
     })
     app.delete('/selectedClasses/:id', async (req, res) => {
       const id = req.params.id;
-      const query = { _id:new ObjectId(id) }
+      const query = { _id: new ObjectId(id) }
       const result = await studentSelectedClassCollection.deleteOne(query)
       res.send(result)
     })
     // instructor related api
     app.get('/instructor/addClass', async (req, res) => {
-      const email =req.query.email;
-      const query ={email:email}
+      const email = req.query.email;
+      const query = { email: email }
       const result = await addClassCollection.find(query).toArray();
       res.send(result)
     })
     app.post('/instructor/addClass', async (req, res) => {
-      const classes =req.body;
-      const result = await addClassCollection .insertOne(classes);
+      const classes = req.body;
+      const result = await addClassCollection.insertOne(classes);
+      res.send(result)
+    })
+    app.get('/instructor', async (req, res) => {
+      const result = await instructorCollection.find().toArray()
       res.send(result)
     })
 
-
-
+    app.patch('/instructor/addClass/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const updateDoc = {
+        $set: {
+          status: 'approved'
+        },
+      };
+      const result = await addClassCollection.updateOne(query, updateDoc);
+      res.send(result)
+    })
+    app.patch('/instructor/addClass/deny/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const updateDoc = {
+        $set: {
+          status: 'Denied'
+        },
+      };
+      const result = await addClassCollection.updateOne(query, updateDoc);
+      res.send(result)
+    })
+    // users related api 
+    app.post('/allUsers', async (req, res) => {
+      const users = req.body;
+      const result = await userCollection.insertOne(users);
+      res.send(result)
+    })
+    app.get('/allUsers', async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result)
+    })
+    app.patch('/allUsers/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const updateDoc = {
+        $set: {
+          role: 'Admin'
+        },
+      };
+      const result = await userCollection.updateOne(query, updateDoc);
+      res.send(result)
+    })
 
 
 
