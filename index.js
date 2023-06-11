@@ -90,13 +90,13 @@ async function run() {
       res.send(result)
     })
     // instructor related api
-    app.get('/instructor/addClass', async (req, res) => {
-      const email = req.query.email;
-      const query = { email: email }
+    app.get('/instructor/addClass/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = {  instructorEmail: email }
       const result = await addClassCollection.find(query).toArray();
       res.send(result)
     })
-    app.post('/instructor/addClass', async (req, res) => {
+    app.post('/instructor/addClass/', async (req, res) => {
       const classes = req.body;
       const result = await addClassCollection.insertOne(classes);
       res.send(result)
