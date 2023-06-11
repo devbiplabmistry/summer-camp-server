@@ -92,7 +92,7 @@ async function run() {
     // instructor related api
     app.get('/instructor/addClass/:email', async (req, res) => {
       const email = req.params.email;
-      const query = {  instructorEmail: email }
+      const query = { instructorEmail: email }
       const result = await addClassCollection.find(query).toArray();
       res.send(result)
     })
@@ -138,6 +138,31 @@ async function run() {
       const result = await userCollection.find().toArray();
       res.send(result)
     })
+    app.get('/allUsers/admin/:email',async (req, res) => {
+      const email =req.params.email;
+      const query ={email:email}
+      const user = await userCollection.findOne(query)
+      const result ={admin:user?.role==='Admin'} 
+      res.send(result)
+    })
+    app.get('/allUsers/instructor/:email',async (req, res) => {
+      const email =req.params.email;
+      const query ={email:email}
+      const user = await userCollection.findOne(query)
+      const result ={Instructor:user?.role==='Instructor'} 
+      res.send(result)
+    })
+    app.get('/allUsers/student/:email',async (req, res) => {
+      const email =req.params.email;
+      // console.log(email);
+      const query ={email:email}
+      const user = await userCollection.findOne(query)
+      // console.log(user);
+      const result ={student:user?.role==='student'} 
+      res.send(result)
+    })
+
+
     app.patch('/allUsers/admin/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
