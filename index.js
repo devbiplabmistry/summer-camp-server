@@ -138,12 +138,23 @@ async function run() {
       const result = await userCollection.find().toArray();
       res.send(result)
     })
-    app.patch('/allUsers/:id', async (req, res) => {
+    app.patch('/allUsers/admin/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const updateDoc = {
         $set: {
           role: 'Admin'
+        },
+      };
+      const result = await userCollection.updateOne(query, updateDoc);
+      res.send(result)
+    })
+    app.patch('/allUsers/instructor/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const updateDoc = {
+        $set: {
+          role: 'Instructor'
         },
       };
       const result = await userCollection.updateOne(query, updateDoc);
