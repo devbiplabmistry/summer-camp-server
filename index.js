@@ -47,6 +47,7 @@ async function run() {
     const studentSelectedClassCollection = client.db("summerSchool").collection("selectedClass");
     const addClassCollection = client.db("summerSchool").collection("addedClass");
     const userCollection = client.db("summerSchool").collection("allUsers");
+    const feedbackCollection = client.db("summerSchool").collection("feedback");
 
     // jwt related api
     app.post('/jwt', (req, res) => {
@@ -57,6 +58,20 @@ async function run() {
       res.send({ token })
 
     })
+
+
+    // verify admin middleware
+    const verifyAdmin = (req, res, next) => {
+      const email = req.decoded.email;
+      console.log(email);
+      const query = { email: email }
+      const user = userCollection.findOne(query)
+      console.log(user);
+      if (user?.role !== 'Admin') {
+        res.send({ error: true, message: 'unauthorize access' })
+      }
+      next()
+    }
     // dance class related api
     app.get('/classes', async (req, res) => {
       const result = await danceCollection.find().toArray();
@@ -90,6 +105,10 @@ async function run() {
       res.send(result)
     })
     // instructor related api
+    app.get('/instructor/addClass', async (req, res) => {
+      const result = await addClassCollection.find().toArray();
+      res.send(result)
+    })
     app.get('/instructor/addClass/:email', async (req, res) => {
       const email = req.params.email;
       const query = { instructorEmail: email }
@@ -138,27 +157,27 @@ async function run() {
       const result = await userCollection.find().toArray();
       res.send(result)
     })
-    app.get('/allUsers/admin/:email',async (req, res) => {
-      const email =req.params.email;
-      const query ={email:email}
+    app.get('/allUsers/admin/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email }
       const user = await userCollection.findOne(query)
-      const result ={admin:user?.role==='Admin'} 
+      const result = { admin: user?.role === 'Admin' }
       res.send(result)
     })
-    app.get('/allUsers/instructor/:email',async (req, res) => {
-      const email =req.params.email;
-      const query ={email:email}
+    app.get('/allUsers/instructor/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email }
       const user = await userCollection.findOne(query)
-      const result ={Instructor:user?.role==='Instructor'} 
+      const result = { Instructor: user?.role === 'Instructor' }
       res.send(result)
     })
-    app.get('/allUsers/student/:email',async (req, res) => {
-      const email =req.params.email;
+    app.get('/allUsers/student/:email', async (req, res) => {
+      const email = req.params.email;
       // console.log(email);
-      const query ={email:email}
+      const query = { email: email }
       const user = await userCollection.findOne(query)
       // console.log(user);
-      const result ={student:user?.role==='student'} 
+      const result = { student: user?.role === 'student' }
       res.send(result)
     })
 
@@ -186,6 +205,19 @@ async function run() {
       res.send(result)
     })
 
+    // feedback
+    app.post('/feedback/:id', async (req, res) => {
+      const id=req.params.id
+      const feedback =req.body;
+      const result=await feedbackCollection.insertOne(feedback);
+      res.send(result)
+    })
+    app.get('/feedback/:id', async (req, res) => {
+      const id =req.params.id;
+      const query ={feedbackId:id}
+      const result=await feedbackCollection.findOne(query);
+      res.send(result)
+    })
 
 
 
