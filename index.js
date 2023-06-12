@@ -63,15 +63,36 @@ async function run() {
     // verify admin middleware
     const verifyAdmin = (req, res, next) => {
       const email = req.decoded.email;
-      console.log(email);
       const query = { email: email }
       const user = userCollection.findOne(query)
-      console.log(user);
       if (user?.role !== 'Admin') {
         res.send({ error: true, message: 'unauthorize access' })
       }
       next()
     }
+
+    // verify instructor
+
+    const verifyInstructor = (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email }
+      const user = userCollection.findOne(query)
+      if (user?.role !== 'Instructor') {
+        res.send({ error: true, message: 'unauthorize access' })
+      }
+      next()
+    }
+    //  const verify student
+    const verifyStudent = (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email }
+      const user = userCollection.findOne(query)
+      if (user?.role !== 'student') {
+        res.send({ error: true, message: 'unauthorize access' })
+      }
+      next()
+    }
+
     // dance class related api
     app.get('/classes', async (req, res) => {
       const result = await danceCollection.find().toArray();
@@ -81,6 +102,7 @@ async function run() {
     app.post('/selectedClasses/:id', async (req, res) => {
       const id = req.params.id;
       const selectedClass = req.body
+      console.log(selectedClass);
       const query = { selectedClassId: id }
       const existing = await studentSelectedClassCollection.findOne(query)
       console.log(existing);
@@ -91,6 +113,12 @@ async function run() {
         const result = await studentSelectedClassCollection.insertOne(selectedClass);
         res.send(selectedClass)
       }
+    })
+    app.get('/selectedClasses/student', async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email }
+      const result = await studentSelectedClassCollection.find(query).toArray()
+      res.send(result)
     })
     app.get('/selectedClasses', async (req, res) => {
       const email = req.query.email;
@@ -207,17 +235,55 @@ async function run() {
 
     // feedback
     app.post('/feedback/:id', async (req, res) => {
-      const id=req.params.id
-      const feedback =req.body;
-      const result=await feedbackCollection.insertOne(feedback);
+      const id = req.params.id
+      const feedback = req.body;
+      const result = await feedbackCollection.insertOne(feedback);
       res.send(result)
     })
     app.get('/feedback/:id', async (req, res) => {
-      const id =req.params.id;
-      const query ={feedbackId:id}
-      const result=await feedbackCollection.findOne(query);
+      const id = req.params.id;
+      const query = { feedbackId: id }
+      const result = await feedbackCollection.findOne(query);
       res.send(result)
     })
+    // payments related api
+    const stripe = require("stripe")(process.env.PAYMENTS_TOKEN);
+    // app.use(express.static("public"));
+    // app.post("/create-payment-intent", async (req, res) => {
+    //   const { price } = req.body;
+    //   const amount =price*100;
+    //   const paymentIntent = await stripe.paymentIntents.create({
+    //     amount: amount,
+    //     currency: "usd",
+    //     automatic_payment_methods: {
+    //       enabled: true,
+    //     },
+    //     "payment_method_types": [
+    //       "card"
+    //     ]
+    //   })
+
+    //   res.send({
+    //     clientSecret: paymentIntent.client_secret,
+    //   })
+    //   })
+    app.post("/create-payment-intent", verifyJwt,verifyStudent, async (req, res) => {
+      const { price } = req.body;
+      // console.log(price);
+      const amount = price * 100;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        "payment_method_types": ["card"],
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
 
 
 
