@@ -177,7 +177,13 @@ async function run() {
     })
     // users related api 
     app.post('/allUsers', async (req, res) => {
-      const users = req.body;
+      const user = req.body;
+      const query = { email: user.email }
+      const existingUser = await userCollection.findOne(query);
+
+      if (existingUser) {
+        return res.send({ message: 'user already exists' })
+      }
       const result = await userCollection.insertOne(users);
       res.send(result)
     })
@@ -247,37 +253,16 @@ async function run() {
       res.send(result)
     })
     // payments related api
+    // console.log(process.env.PAYMENTS_TOKEN);
     const stripe = require("stripe")(process.env.PAYMENTS_TOKEN);
-    // app.use(express.static("public"));
-    // app.post("/create-payment-intent", async (req, res) => {
-    //   const { price } = req.body;
-    //   const amount =price*100;
-    //   const paymentIntent = await stripe.paymentIntents.create({
-    //     amount: amount,
-    //     currency: "usd",
-    //     automatic_payment_methods: {
-    //       enabled: true,
-    //     },
-    //     "payment_method_types": [
-    //       "card"
-    //     ]
-    //   })
-
-    //   res.send({
-    //     clientSecret: paymentIntent.client_secret,
-    //   })
-    //   })
-    app.post("/create-payment-intent", verifyJwt,verifyStudent, async (req, res) => {
+    app.post("/create-payment-intent",  async (req, res) => {
       const { price } = req.body;
-      // console.log(price);
+      console.log(price);
       const amount = price * 100;
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
         currency: "usd",
-        "payment_method_types": ["card"],
-        automatic_payment_methods: {
-          enabled: true,
-        },
+        "payment_method_types": ["card"]
       });
 
       res.send({
