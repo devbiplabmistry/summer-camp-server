@@ -41,13 +41,15 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-     client.connect();
+ client.connect();
     const danceCollection = client.db("summerSchool").collection("danceClasses");
     const instructorCollection = client.db("summerSchool").collection("instructor");
     const studentSelectedClassCollection = client.db("summerSchool").collection("selectedClass");
     const addClassCollection = client.db("summerSchool").collection("addedClass");
     const userCollection = client.db("summerSchool").collection("allUsers");
     const feedbackCollection = client.db("summerSchool").collection("feedback");
+    const paymentCollection = client.db("summerSchool").collection("payments");
+    const payedCollection = client.db("summerSchool").collection("payedItem")
 
     // jwt related api
     app.post('/jwt', (req, res) => {
@@ -133,17 +135,18 @@ async function run() {
       res.send(result)
     })
     // instructor related api
+    app.get('/instructor/addClass/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email }
+      const result = await addClassCollection.find(query).toArray();
+      res.send(result)
+    })
     app.get('/instructor/addClass', async (req, res) => {
       const result = await addClassCollection.find().toArray();
       res.send(result)
     })
-    app.get('/instructor/addClass/:email', async (req, res) => {
-      const email = req.params.email;
-      const query = { instructorEmail: email }
-      const result = await addClassCollection.find(query).toArray();
-      res.send(result)
-    })
-    app.post('/instructor/addClass/', async (req, res) => {
+
+    app.post('/instructor/addClass', async (req, res) => {
       const classes = req.body;
       const result = await addClassCollection.insertOne(classes);
       res.send(result)
@@ -184,7 +187,7 @@ async function run() {
       if (existingUser) {
         return res.send({ message: 'user already exists' })
       }
-      const result = await userCollection.insertOne(users);
+      const result = await userCollection.insertOne(user);
       res.send(result)
     })
     app.get('/allUsers', async (req, res) => {
@@ -255,7 +258,7 @@ async function run() {
     // payments related api
     // console.log(process.env.PAYMENTS_TOKEN);
     const stripe = require("stripe")(process.env.PAYMENTS_TOKEN);
-    app.post("/create-payment-intent",  async (req, res) => {
+    app.post("/create-payment-intent", async (req, res) => {
       const { price } = req.body;
       console.log(price);
       const amount = price * 100;
@@ -270,6 +273,34 @@ async function run() {
       });
     });
 
+    app.get('/payments/:email', async (req, res) => {
+      const email = req.params.email;
+      // console.log(email);
+      const query = { email: email }
+      const result = await paymentCollection.find(query).toArray();
+      res.send(result)
+    })
+
+    app.post('/payments', verifyJwt, async (req, res) => {
+      const payment = req.body;
+      const result = await paymentCollection.insertOne(payment)
+      res.send(result)
+    })
+
+
+    app.get("/payedItem/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email}
+      const result = await payedCollection.find(query).toArray();
+      res.send(result)
+    })
+
+    app.post('/payedItem',  async (req, res) => {
+      const PayedItem = req.body;
+      console.log(PayedItem);
+      const result = await payedCollection.insertOne(PayedItem)
+      res.send(result)
+    })
 
 
     // Send a ping to confirm a successful connection
